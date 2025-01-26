@@ -5,6 +5,7 @@ import { TokenExtensions } from "../target/types/token_extensions";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { assert, expect } from "chai";
 import * as MYKEYPAIR  from "./keys/id.json";
+
 const TOKEN_2022_PROGRAM_ID = new anchor.web3.PublicKey(
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 );
@@ -56,8 +57,8 @@ describe("token extensions", () => {
     );
     await program.methods
       .createMintAccount({
-        name: "Andrew token",
-        symbol: "ATOK",
+        name: "My token",
+        symbol: "MTK",
         uri: "https://my-token-data.com/metadata.json",
       })
       .accountsStrict({

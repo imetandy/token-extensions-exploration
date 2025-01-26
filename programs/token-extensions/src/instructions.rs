@@ -2,11 +2,11 @@ use anchor_lang::{prelude::*, solana_program::entrypoint::ProgramResult};
 
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_2022::spl_token_2022::extension::{
+    token_2022::{self, spl_token_2022::extension::{
         group_member_pointer::GroupMemberPointer, metadata_pointer::MetadataPointer,
         mint_close_authority::MintCloseAuthority, permanent_delegate::PermanentDelegate,
         transfer_hook::TransferHook,
-    },
+    }},
     token_interface::{
         spl_token_metadata_interface::state::TokenMetadata, token_metadata_initialize, Mint,
         Token2022, TokenAccount, TokenMetadataInitialize,
@@ -97,6 +97,40 @@ impl<'info> CreateMintAccount<'info> {
         token_metadata_initialize(cpi_ctx, name, symbol, uri)?;
         Ok(())
     }
+
+
+    fn initialize_transfer_fee(
+        &self,
+        transfer_fee_basis_points: u16,
+        maximum_fee: u64,
+    ) -> ProgramResult {
+
+
+        token_2022::spl_token_2022::extension::transfer_fee::instruction::initialize_transfer_fee_config(
+            &self.token_program.key(),
+            &self.mint.key(),
+            Some(&self.authority.key()),
+            Some(&self.authority.key()),
+            transfer_fee_basis_points,
+            maximum_fee,
+        )?;
+
+        token_2022::spl_token_2022::extension::transfer_fee::instruction::transfer_checked_with_fee(
+            &self.token_program.key(),
+            &self.mint_token_account.key(),
+            &self.mint.key(),
+            &self.authority.key(),
+            &self.authority.key(),
+            &[&self.authority.key()],
+            500,
+            6,
+            29
+        )?;
+
+        Ok(())
+    }
+
+
 }
 
 pub fn handler(ctx: Context<CreateMintAccount>, args: CreateMintAccountArgs) -> Result<()> {
@@ -106,6 +140,10 @@ pub fn handler(ctx: Context<CreateMintAccount>, args: CreateMintAccountArgs) -> 
         args.uri.clone(),
     )?;
     ctx.accounts.mint.reload()?;
+
+    ctx.accounts.initialize_transfer_fee(500, 500)?;
+
+
     let mint_data = &mut ctx.accounts.mint.to_account_info();
     let metadata = get_mint_extensible_extension_data::<TokenMetadata>(mint_data)?;
     assert_eq!(metadata.mint, ctx.accounts.mint.key());
